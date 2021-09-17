@@ -5,11 +5,8 @@ from flask import Flask, jsonify, request
 
 app = Flask(__name__)
 
-# app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///movies.db'
-# app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get(
-# "DATABASE_URL", 'sqlite:///movies.db').replace("s://", "sql://")
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get(
-    "DATABASE_URL").replace("s://", "sql://")
+    "DATABASE_URL", "sqlite:///movies.db").replace("s://", "sql://")
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
@@ -47,14 +44,17 @@ def get_watched_movies(movie_ids, ratings):
         movies.append(movie)
 
     watched_movies = []
-    i = 0
-    for movie in movies:
-        watched_movies.append({
-            "movieId": int(movie.movieId),
-            "title": f"{movie.title}({movie.year})",
-            "rating": ratings[i]
-        })
-        i += 1
+    try:
+        i = 0
+        for movie in movies:
+            watched_movies.append({
+                "movieId": int(movie.movieId),
+                "title": f"{movie.title}({movie.year})",
+                "rating": ratings[i]
+            })
+            i += 1
+    except AttributeError:
+        return []
     return watched_movies
 
 
@@ -68,42 +68,57 @@ def get_recommended_movies(recommended_titles):
 
 
 def get_movie_by_id(id):
-    movie = db.session.query(Movie).filter_by(imdbID=id).first()
-    return movie.items()
+    try:
+        movie = db.session.query(Movie).filter_by(imdbID=id).first()
+        return movie.items()
+    except AttributeError:
+        return None
 
 
 def get_movie_by_title(title):
-    movie = db.session.query(Movie).filter_by(originalTitle=title).first()
-    return movie.items()
+    try:
+        movie = db.session.query(Movie).filter_by(originalTitle=title).first()
+        return movie.items()
+    except AttributeError:
+        return None
 
 
 @app.route("/getRecommendedData")
 def getRecommendedData():
-    size = int(request.args.get('size'))
-    movie_ids = []
-    ratings = []
-    for i in range(1, size + 1):
-        movie_ids.append(request.args.get(f'id_{i}'))
-        ratings.append(int(request.args.get(f'rating_{i}')))
+    try:
+        size = int(request.args.get('size'))
+        movie_ids = []
+        ratings = []
+        for i in range(1, size + 1):
+            movie_ids.append(request.args.get(f'id_{i}'))
+            ratings.append(int(request.args.get(f'rating_{i}')))
 
-    watched_movies = get_watched_movies(movie_ids, ratings)
-    recommended_titles = get_recommendations(watched_movies)
-    recommendations = get_recommended_movies(recommended_titles)
-    return jsonify(recommendations=recommendations), 200
+        watched_movies = get_watched_movies(movie_ids, ratings)
+        recommended_titles = get_recommendations(watched_movies)
+        recommendations = get_recommended_movies(recommended_titles)
+        return jsonify(recommendations=recommendations), 200
+    except TypeError:
+        return jsonify(Error="Inappropriate Request"), 405
 
 
 @app.route("/searchImdbID")
 def searchImdbID():
-    id = request.args.get('id')
-    movie = get_movie_by_id(id)
-    return jsonify(movie=movie), 200
+    try:
+        id = request.args.get('id')
+        movie = get_movie_by_id(id)
+        return jsonify(movie=movie), 200
+    except TypeError:
+        return jsonify(Error="Inappropriate Request"), 405
 
 
 @app.route("/searchMovieTitle")
 def searchMovieTitle():
-    title = request.args.get('title')
-    movie = get_movie_by_title(title)
-    return jsonify(movie=movie), 200
+    try:
+        title = request.args.get('title')
+        movie = get_movie_by_title(title)
+        return jsonify(movie=movie), 200
+    except TypeError:
+        return jsonify(Error="Inappropriate Request"), 405
 
 
 @app.route("/all")
