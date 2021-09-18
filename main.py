@@ -69,7 +69,15 @@ def get_recommended_movies(recommended_titles):
 
 def get_movie_by_id(id):
     try:
-        movie = db.session.query(Movie).filter_by(imdbID=id).first()
+        movie = Movie.query.get(id)
+        return movie.items()
+    except AttributeError:
+        return None
+
+
+def get_movie_by_imdbID(imdbID):
+    try:
+        movie = db.session.query(Movie).filter_by(imdbID=imdbID).first()
         return movie.items()
     except AttributeError:
         return None
@@ -101,11 +109,21 @@ def getRecommendedData():
         return jsonify(Error="Inappropriate Request"), 405
 
 
-@app.route("/searchImdbID")
-def searchImdbID():
+@app.route("/searchMovieID")
+def searchMovieID():
     try:
         id = request.args.get('id')
         movie = get_movie_by_id(id)
+        return jsonify(movie=movie), 200
+    except TypeError:
+        return jsonify(Error="Inappropriate Request"), 405
+
+
+@app.route("/searchImdbID")
+def searchImdbID():
+    try:
+        imdbID = request.args.get('imdbID')
+        movie = get_movie_by_imdbID(imdbID)
         return jsonify(movie=movie), 200
     except TypeError:
         return jsonify(Error="Inappropriate Request"), 405
@@ -121,10 +139,14 @@ def searchMovieTitle():
         return jsonify(Error="Inappropriate Request"), 405
 
 
-@app.route("/all")
-def get_all():
-    all_movies = db.session.query(Movie).all()
-    return jsonify(all=len(all_movies)), 200
+@app.route("/allMovies")
+def getAllMovies():
+    movies = [movie.items() for movie in db.session.query(Movie).all()]
+    data = {
+        "size": len(movies),
+        "movies": movies
+    }
+    return jsonify(all_movies=data), 200
 
 
 if __name__ == '__main__':
