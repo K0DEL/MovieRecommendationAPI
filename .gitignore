@@ -1,2 +1,5 @@
 __pycache__/
 trim-001-d3adcc534441.json
+movies.db
+movies.json
+venv/
