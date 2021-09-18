@@ -1,7 +1,7 @@
 from flask_sqlalchemy import SQLAlchemy
 import os
 from movie_recommender import get_recommendations
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, redirect
 
 app = Flask(__name__)
 
@@ -9,6 +9,8 @@ app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get(
     "DATABASE_URL", "sqlite:///movies.db").replace("s://", "sql://")
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
+
+POSTMAN_URL = "https://documenter.getpostman.com/view/14999299/UUxtDVjK"
 
 
 class Movie(db.Model):
@@ -89,6 +91,11 @@ def get_movie_by_title(title):
         return movie.items()
     except AttributeError:
         return None
+
+
+@app.route("/")
+def documentation():
+    return redirect(POSTMAN_URL)
 
 
 @app.route("/getRecommendedData")
