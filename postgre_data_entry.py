@@ -1,17 +1,24 @@
 from main import Movie, db
-import json
+import firebase_admin
+from firebase_admin import credentials
+from firebase_admin import firestore
+import os
 
 
-file = open('movies.json')
-data = json.load(file)['movies']
+certificate = os.environ.get("GOOGLE_APPLICATION_CREDENTIALS")
+cred = credentials.Certificate(certificate)
+firebase_admin.initialize_app(cred)
+fdb = firestore.client()
 
-movies = []
-for movie_data in data:
-    movies.append(movie_data)
 
-print(len(movies))
+def read_data():
+    movies = list(fdb.collection(u'movies').stream())
+    return movies
 
-for movie in movies:
+
+movies = read_data()
+for movie_data in movies:
+    movie = movie_data.to_dict()
     new_movie = Movie(
         movieId=movie['movieId'],
         title=movie['title'],
